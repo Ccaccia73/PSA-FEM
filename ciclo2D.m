@@ -21,6 +21,12 @@ nps = 2;
 % inizializzazione matrice di rigidezza
 K = [];
 
+% matrice rigidezza stato di sforzo piano
+
+E = 72e3;
+nu = 0.28;
+
+C = [1. nu 0.; nu 1. 0.; 0. 0. (1. - nu) / 2.] * (E / (1 - nu^2));
 
 % inizializzazione matrice complessiva punti di Gauss e pesi
 pi = [];
