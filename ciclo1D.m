@@ -1,20 +1,15 @@
 % Script calcolo matrice di rigidezza in 2D
 
 % num nodi per elemento
-nnod = 4;
+nnod = 2;
 
 % coordinate dei nodi in rif globale
 
 if nnod == 4
-	xi = [0, 10, 10, 0]';
-	yi = [0, 0, 10, 10]';
+	xi = [0, 10]';
 else
-	xi = [0, 10, 10, 0, 5, 10, 5, 0]';
-	yi = [0, 0, 10, 10, 0, 5, 10, 5]';
+	xi = [0, 10, 5]';
 end
-
-% thickness
-t = 1.
 
 % # gdl per nodo
 gdl = 2;
@@ -22,52 +17,42 @@ gdl = 2;
 
 % num punti di integrazione per ogni dimensione
 npr = 2;
-nps = 2;
 
 % recupero Gauss points e pesi
 [r, wr] = lgwt(npr,-1,1);
-[s, ws] = lgwt(nps,-1,1);
 
 
 % inizializzazione matrice di rigidezza
 K = zeros(nnod*gdl);
 
 % matrice rigidezza stato di sforzo piano
-
+% modulo di Young
 E = 72e3;
-nu = 0.28;
+% Inerzia della sezione (costante)
+I = 1.;
 
-C = [1. nu 0.; nu 1. 0.; 0. 0. (1. - nu) / 2.] * (E / (1 - nu^2));
+% coefficiente di talgio
+ks = 5./6.;
 
-% inizializzazione matrice complessiva punti di Gauss e pesi
-pi = [];
-wi = [];
-
-% ciclo costruzione matrici punti e pesi
-for i=1:npr
-	pi = [pi; [ones(npr,1)*r(i) s]];
-	wi = [wi; [ones(npr,1)*wr(i).*ws]];
-end
 
 
 % ciclo di calcolo
-for i=1:npr*nps
+for i=1:npr
 	% punto attuale
-	ri = pi(i,1);
-	si = pi(i,2);
+	ri = pi(i);
 	
 	% peso attuale
-	wrs = wi(i);
+	wr = wi(i);
 	
 	% Shape functions e derivate
-	N = Form2D(ri,si,nnod);
-	Nrs = Form2DD(ri,si,nnod);
+	N = Form1D(ri,nnod,1); % 1 Eulero / 2 Timoshenko
+	Nr = Form1DD(ri,si,nnod);
 	
 	% Jacobiano
-	J = [Nrs*xi Nrs*yi];
+	J = [Nr*xi];
 	
 	% Shape functions in coord spaziali
-	Nxy = inv(J)*Nrs;
+	Nxy = inv(J)*Nr;
 	% recupero matrice B
 	B = zeros(3,2*nnod);
 	B(1,1:nnod) = Nxy(1,:);
@@ -76,7 +61,7 @@ for i=1:npr*nps
 	B(3,nnod+1:end) = Nxy(1,:);
 	
 	% assemblaggio matrice
-	K = K + B'*C*B*t*det(J)*wrs;
+	K = K + B'*C*B*det(J);
 end
 
 K
