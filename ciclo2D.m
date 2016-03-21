@@ -1,9 +1,20 @@
 % Script calcolo matrice di rigidezza in 2D
 
-
-
 % num nodi per elemento
 nnod = 4;
+
+% coordinate dei nodi in rif globale
+
+if nnod == 4
+	xi = [0, 10, 10, 0]';
+	yi = [0, 0, 10, 10]';
+else
+	xi = [0, 10, 10, 0, 5, 10, 5, 0]';
+	yi = [0, 0, 10, 10, 0, 5, 10, 5]';
+end
+
+% thickness
+t = 1.
 
 % # gdl per nodo
 gdl = 2;
@@ -19,7 +30,7 @@ nps = 2;
 
 
 % inizializzazione matrice di rigidezza
-K = [];
+K = zeros(nnod*gdl);
 
 % matrice rigidezza stato di sforzo piano
 
@@ -33,9 +44,9 @@ pi = [];
 wi = [];
 
 % ciclo costruzione matrici punti e pesi
-for i=1:npi
-	pi = [pi; [ones(npi,1)*r(i) s]];
-	wi = [wi; [ones(npi,1)*wr(i) ws]];
+for i=1:npr
+	pi = [pi; [ones(npr,1)*r(i) s]];
+	wi = [wi; [ones(npr,1)*wr(i) ws]];
 end
 
 
@@ -52,17 +63,20 @@ for i=1:npr*nps
 	N = Form2D(ri,si,nnod);
 	Nrs = Form2DD(ri,si,nnod);
 	
-	% calcolo coordinate spaziali dei pti di Gauss
-	xy = invTransf(ri,si);
-	
 	% Jacobiano
-	J = Nrs*xy;
+	J = [Nrs*xi Nrs*yi];
 	
 	% Shape functions in coord spaziali
 	Nxy = inv(J)*Nrs;
 	% recupero matrice B
-	B = buildMat(Nxy);
+	B = zeros(3,2*nnod);
+	B(1,1:nnod) = Nxy(1,:);
+	B(2,nnod+1:end) = Nxy(2,:);
+	B(3,1:nnod) = Nxy(2,:);
+	B(3,nnod+1:end) = Nxy(1,:);
 	
 	% assemblaggio matrice
 	K = K + B'*C*B*t*det(J);
 end
+
+K
